@@ -1,15 +1,10 @@
 name: Coins
-version: 0.0.1
-main: com.OyunTarayici.Coins.GameObject
-authors: [ OyunTarayici ]
-web: github.com/HyperLords
-description: Player Coins show
-soft-depend:
- - BukkitApi
-site: spigotmc.org/resources/Coins
+version: EcoAddons
+authors: [OyunTarayici]
+main: com.OyunTarayici.Coins.EcoCoins
 
 commands:
-  coin:
-   usage: /coin help
-   description: Coins
-   aliases: [coin]
+  coins:
+    usage: /coins help
+    description: Coins
+    aliases: [coin, c]

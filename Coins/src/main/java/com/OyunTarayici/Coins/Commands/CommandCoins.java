@@ -1,128 +1,221 @@
 package com.OyunTarayici.Coins.Commands;
 
+import java.util.List;
 import org.BukkitApi.main.BukkitUtiles.CommandUtils.CommandCreator;
-import org.BukkitApi.main.BukkitUtiles.MesageUtils.GetColoredMessage;
-import org.BukkitApi.main.BukkitUtiles.MesageUtils.GetPlayerMessage;
+import org.BukkitApi.main.BukkitUtiles.MesageUtils.PlayerUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import com.OyunTarayici.Coins.Managers.CoinManager;
-import com.OyunTarayici.Coins.Profiles.PlayerProfiles;
+import com.OyunTarayici.Coins.Managers.CoinsManager;
+import com.OyunTarayici.Coins.Profiles.CoinsProfile;
+import lombok.Getter;
 
-public class CommandCoins extends CommandCreator{
+public class CommandCoins extends CommandCreator {
 
+	@Getter
+	private CoinsProfile coinsProfile=null;
+	
+	@Getter  
+	private OfflinePlayer offlinePlayer=null;
+	
 	public CommandCoins(JavaPlugin plugin, String commandName) {
-		super(plugin, "coin");
+		super(plugin, "coins");
+	}
+
+	@SuppressWarnings("deprecation")
+	@Override
+	public void executeCommand(Player player, String arg1, String[] arg) {
+		command=(Command)getPlugin().getCommand(arg1);
+		if (player.hasPermission("coins.player.commands")) {
+			if (command.getName().equals("coins")) {
+			
+			if (arg.length==0) {
+				coinsProfile=CoinsProfile.getEcoCoins().get(player.getUniqueId());
+				PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&aYour accounts: &e"+CoinsManager.getCoins(coinsProfile)));
+			return;}
+			
+			if (arg.length>=0) {
+				if (arg[0].equalsIgnoreCase("help")) {
+					PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&a/coins <username> &cLook player coins"));
+					PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&a/coins send <username> &cPlayer send coins"));
+					if (player.hasPermission("coins.player.admin")) {
+						PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&a/coins add <username> <amount> &cPlayer add coins"));
+						PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&a/coins set <username> <amount> &cPlayer set coins"));
+						PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&a/coins delete <username> <amount> &cPlayer delete coins"));
+						PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&a/coins reset <username> &cPlayer reset coins"));
+						PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&a/coins delete account <username> &cPlayer delete account"));
+					}
+			return;}}
+			
+			if (arg.length<=1) {
+					offlinePlayer=Bukkit.getOfflinePlayer(arg[0]);
+					coinsProfile=CoinsProfile.getEcoCoins().get(offlinePlayer.getUniqueId());
+					
+					if (!offlinePlayer.isOnline()) {
+						PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cPlayer not online!"));
+					return;}else if (offlinePlayer==null) {
+						try {
+							PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cPlayer not online!"));
+						} catch (NullPointerException e) {
+							return;
+						}
+					return;}else {
+						PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&e"+offlinePlayer.getName()+" &aAccounts: &c"+CoinsManager.getCoins(coinsProfile)));
+					return;}}
+			
+			if (arg.length>=0) {
+				if (arg[0].equals("send")) {
+					offlinePlayer=Bukkit.getOfflinePlayer(arg[1]);
+					coinsProfile=CoinsProfile.getEcoCoins().get(offlinePlayer.getUniqueId());
+					CoinsProfile playerProfile=CoinsProfile.getEcoCoins().get(player.getUniqueId());
+					int coins=Integer.parseInt(arg[2]);
+					
+					if (!offlinePlayer.isOnline()) {
+						PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cPlayer not online!"));
+					return;}else if (offlinePlayer==null) {
+						try {
+							PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cPlayer not online!"));
+						} catch (NullPointerException e) {
+							return;
+						}
+					return;}else if (offlinePlayer==player) {
+						PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cSorry your account not have send coin"));
+					return;}else {
+						
+						if (coins<0||playerProfile.getCoins()<0||playerProfile.getCoins()<=0) {
+							PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cInvalid number"));
+						return;}else {
+							
+							CoinsManager.addCoins(coinsProfile, coins);
+							CoinsManager.deleteCoins(playerProfile, coins);
+							
+							CoinsManager.saveAccounts(player);
+							CoinsManager.createAccounts(player);
+							
+							CoinsManager.saveAccounts(offlinePlayer.getPlayer());
+							CoinsManager.createAccounts(offlinePlayer.getPlayer());
+							
+							PlayerUtils.getPlayerMessage(offlinePlayer.getPlayer(), PlayerUtils.getColoredMessage("&aYour account sended &e"+player.getName()+" &acoin &e"+coins+" &aamount"));
+							PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&aSuccessfull sended coin &e"+offlinePlayer.getName()+" &aamount &e"+coins));
+						return;}}}}
+
+			if (player.hasPermission("coins.player.admin")) {
+				
+				if (arg.length>=2) {
+					if (arg[0].equals("add")) {
+						offlinePlayer=Bukkit.getOfflinePlayer(arg[1]);
+						coinsProfile=CoinsProfile.getEcoCoins().get(offlinePlayer.getUniqueId());
+						int coins=Integer.parseInt(arg[2]);
+						
+						if (!offlinePlayer.isOnline()) {
+							PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cPlayer not online!"));
+						return;}else if (offlinePlayer==null) {
+							try {
+								PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cPlayer not online!"));
+							} catch (IllegalArgumentException e) {
+								return;
+							}
+						return;}else if (coins==0||coins<0) {
+								PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cInvalid number"));
+						return;}else {
+									CoinsManager.addCoins(coinsProfile, coins);
+									CoinsManager.saveAccounts(offlinePlayer.getPlayer());
+									CoinsManager.createAccounts(offlinePlayer.getPlayer());
+									PlayerUtils.getPlayerMessage(offlinePlayer.getPlayer(), PlayerUtils.getColoredMessage("&aYour account added &e"+coins+" &acoins"));
+									PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&aSuccessfull added coins with &e"+offlinePlayer.getName()+" &aaccount &e"+coins+" &aamount"));
+						return;}}}
+
+				if (arg.length>=2) {
+					if (arg[0].equals("set")) {
+						offlinePlayer=Bukkit.getOfflinePlayer(arg[1]);
+						coinsProfile=CoinsProfile.getEcoCoins().get(offlinePlayer.getUniqueId());
+						int coins=Integer.parseInt(arg[2]);
+						
+						if (offlinePlayer==null) {
+							try {
+								PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cPlayer not online!"));
+							} catch (NullPointerException e) {
+								return;
+							}
+						return;}else {
+							if (!offlinePlayer.isOnline()) {
+								PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cPlayer not online!"));
+							return;}else {
+								if (coins<0) {
+									PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cInvalid number"));
+								return;}else {
+									CoinsManager.setCoins(coinsProfile, coins);
+									CoinsManager.saveAccounts(offlinePlayer.getPlayer());
+									CoinsManager.createAccounts(offlinePlayer.getPlayer());
+									PlayerUtils.getPlayerMessage(offlinePlayer.getPlayer(), PlayerUtils.getColoredMessage("&aYour account arranged &e"+coins+" &acoins"));
+									PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&aSuccessfull arranged coins with &e"+offlinePlayer.getName()+" &aaccount &e"+coins+" &aamount"));
+					return;}}}}}
+
+				if (arg.length>=2) {
+					if (arg[0].equals("delete")) {
+						offlinePlayer=Bukkit.getOfflinePlayer(arg[1]);
+						coinsProfile=CoinsProfile.getEcoCoins().get(offlinePlayer.getUniqueId());
+						int coins=Integer.parseInt(arg[2]);
+						
+						if (offlinePlayer==null) {
+							try {
+								PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cPlayer not online!"));
+							} catch (NullPointerException e) {
+								return;
+							}
+						return;}else {
+							if (!offlinePlayer.isOnline()) {
+								PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cPlayer not online!"));
+								return;}else {
+									if (coinsProfile.getCoins()<=0&&coins<0||coinsProfile.getCoins()<coins&&coinsProfile.getCoins()<=coins||coinsProfile.getCoins()<=0) {
+										PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cInvalid argument"));
+									return;}else {
+										CoinsManager.deleteCoins(coinsProfile, coins);
+										CoinsManager.saveAccounts(offlinePlayer.getPlayer());
+										CoinsManager.createAccounts(offlinePlayer.getPlayer());
+										PlayerUtils.getPlayerMessage(offlinePlayer.getPlayer(), PlayerUtils.getColoredMessage("&aYour account delete &e"+coins+" &acoins"));
+										PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&aSuccessfull delete coins with &e"+offlinePlayer.getName()+" &aaccount &e"+coins+" &aamount"));
+										return;}}}}}
+				
+				if (arg.length>=2) {
+					if (arg[0].equals("reset")) {
+						offlinePlayer=Bukkit.getOfflinePlayer(arg[1]);
+						coinsProfile=CoinsProfile.getEcoCoins().get(offlinePlayer.getUniqueId());
+						
+						if (!offlinePlayer.isOnline()) {
+							PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cPlayer not online!"));
+						return;}else if (offlinePlayer==null) {
+							try {
+								PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cPlayer not online!"));
+							} catch (NullPointerException e) {
+								return;
+							}
+						return;}else {
+							CoinsManager.resetCoins(coinsProfile);
+							CoinsManager.saveAccounts(offlinePlayer.getPlayer());
+							CoinsManager.createAccounts(offlinePlayer.getPlayer());
+							PlayerUtils.getPlayerMessage(offlinePlayer.getPlayer(), PlayerUtils.getColoredMessage("&aYour account has been reseted"));
+							PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&aSuccessfull &e"+offlinePlayer.getName()+" &aAccount reseting"));
+						return;}
+					}
+				}
+				
+			return;}else {
+				PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cYou don't have the permission!"));
+			}
+			
+			return;}
+		}else {
+			PlayerUtils.getPlayerMessage(player, PlayerUtils.getColoredMessage("&cYou don't have the permission!"));
+		}
 	}
 
 	@Override
-	@SuppressWarnings({"deprecation", "null"})
-	public boolean executeCommand(Player player, String arg1, String[] arg) {
-		
-		Command command=(Command)getPlugin().getCommand(arg1);
-		if (player.hasPermission("coin.player.command")) {
-			if (command.getName().equals("coin")) {
-				
-				CoinManager coinManager=new CoinManager();
-				
-				if (arg.length==0) {
-					PlayerProfiles playerProfiles=PlayerProfiles.getProfiles().get(player.getUniqueId());
-					GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&aYour account&0&l&r &e"+coinManager.getPlayerCoin(playerProfiles)));
-				return true;}
-
-				if (arg[0].equalsIgnoreCase("help")) {
-					GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&c&l&m-------------------->&r"));
-					GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&a/coins show <username> &eCoin show to player"));
-					GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&a/coins send <username> <amount> &eCoin send to player"));
-					if (player.hasPermission("coin.admin.command")) {
-						GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&a/coins add <username> <amount> &eCoin add to player"));
-						GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&a/coins set <username> <amount> &eCoin set to player"));
-						GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&a/coins remove <username> <amount> &eCoin remove to player"));
-					}
-					GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&c&l&m-------------------->&r"));
-				return true;}
-				
-				if (arg[0].equalsIgnoreCase("send")) {
-					OfflinePlayer offlinePlayer=Bukkit.getOfflinePlayer(arg[1]);
-					if (offlinePlayer!=null||!(offlinePlayer.equals(player.getName()))) {
-						PlayerProfiles playerProfiles=PlayerProfiles.getProfiles().get(player.getUniqueId());
-						PlayerProfiles senderPlayer=PlayerProfiles.getProfiles().get(offlinePlayer.getUniqueId());
-						int argumnetCoin=Integer.parseInt(arg[2]);
-							coinManager.deleteCoin(playerProfiles, argumnetCoin);
-							coinManager.addCoin(senderPlayer, argumnetCoin);
-							GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&aSuccessfull send &e"+offlinePlayer.getName()+" &acoin &e"+argumnetCoin+" &aamount"));
-							GetPlayerMessage.getPlayerMessage(offlinePlayer.getPlayer(), GetColoredMessage.getColoredMessage("&aSuccesfull your account &e"+player.getName()+" &asender coin"));
-					return true;}else if (!offlinePlayer.equals(player.getName())) {
-						GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&c&lError cannot be send your name"));
-					}else {
-						GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&c&lPlayer not online!"));
-					}
-				}
-				
-				if (arg[0].equalsIgnoreCase("show")) {
-					OfflinePlayer offlinePlayer=Bukkit.getOfflinePlayer(arg[1]);
-					
-					if (offlinePlayer!=null) {
-						PlayerProfiles playerProfiles=PlayerProfiles.getProfiles().get(offlinePlayer.getUniqueId());
-						GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&e"+offlinePlayer.getName()+" &aCoin: &e"+coinManager.getPlayerCoin(playerProfiles)));
-					return true;}else {
-						GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&c&lPlayer not online!"));
-					}
-				}
-
-				if (player.hasPermission("coin.admin.command")) {	
-				int argumnetCoin=Integer.parseInt(arg[2]);
-				
-				if (arg[0].equalsIgnoreCase("add")) {
-					OfflinePlayer offlinePlayer=Bukkit.getOfflinePlayer(arg[1]);
-					
-					if (offlinePlayer!=null) {
-						PlayerProfiles playerProfiles=PlayerProfiles.getProfiles().get(offlinePlayer.getUniqueId());
-						coinManager.addCoin(playerProfiles, argumnetCoin);
-						GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&aSuccessfull added &e"+offlinePlayer.getName()+" &acoin &e"+argumnetCoin+" &aamount"));
-						GetPlayerMessage.getPlayerMessage(offlinePlayer.getPlayer(), GetColoredMessage.getColoredMessage("&aSuccesfull your account &e"+player.getName()+" &aadded coin"));
-					}else {
-						GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&c&lPlayer not online!"));
-					}
-				}
-
-				if (arg[0].equalsIgnoreCase("set")) {
-					OfflinePlayer offlinePlayer=Bukkit.getOfflinePlayer(arg[1]);
-					
-					if (offlinePlayer!=null) {
-						PlayerProfiles playerProfiles=PlayerProfiles.getProfiles().get(offlinePlayer.getUniqueId());
-						coinManager.setCoin(playerProfiles, argumnetCoin);
-						GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&aSuccessfull arranged &e"+offlinePlayer.getName()+" &acoin &e"+argumnetCoin+" &aamount"));
-						GetPlayerMessage.getPlayerMessage(offlinePlayer.getPlayer(), GetColoredMessage.getColoredMessage("&aSuccesfull your account &e"+player.getName()+" &aarranged coin"));
-					}else {
-						GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&c&lPlayer not online!"));
-				}
-				}
-
-				if (arg[0].equalsIgnoreCase("remove")) {
-					OfflinePlayer offlinePlayer=Bukkit.getOfflinePlayer(arg[1]);
-					
-					if (offlinePlayer!=null) {
-						PlayerProfiles playerProfiles=PlayerProfiles.getProfiles().get(offlinePlayer.getUniqueId());
-						coinManager.deleteCoin(playerProfiles, argumnetCoin);
-						GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&aSuccessfull removed &e"+offlinePlayer.getName()+" &acoin &e"+argumnetCoin+" &aamount"));
-						GetPlayerMessage.getPlayerMessage(offlinePlayer.getPlayer(), GetColoredMessage.getColoredMessage("&aSuccesfull your account &e"+player.getName()+" &aremoved coin"));
-					}else {
-						GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&c&lPlayer not online!"));
-					}
-				}
-				
-				}else {
-					GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&c&lYou don't have the admin"));
-				}
-				
-			return true;}
-		}else {
-			GetPlayerMessage.getPlayerMessage(player, GetColoredMessage.getColoredMessage("&c&lYou don't have the permission"));
-		}
-		return true;
+	public List<String> executeTabCompleter(CommandSender arg0, Command arg1, String arg2, String[] arg3) {
+		return null;
 	}
 
 }
